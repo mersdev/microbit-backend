@@ -56,6 +56,13 @@ content-type: application/json
 GET {{baseUrl}}/v1/admin/api-keys/{{apiKey}}/commands
 Authorization: Bearer {{authToken}}
 
+### App Snapshot
+GET {{baseUrl}}/v1/app/devices/{{apiKey}}
+
+### App Stream
+GET {{baseUrl}}/v1/app/devices/{{apiKey}}/stream?deviceId={{apiKey}}
+Accept: text/event-stream
+
 ### Microbit Ack
 GET {{baseUrl}}/v1/microbit/ack?deviceId={{apiKey}}&cmdId={{commandId}}
 

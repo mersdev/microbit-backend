@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import app from "../src/index.ts";
 import { hashPassword } from "../src/auth.ts";
+import { DeviceStreamRoom } from "../src/stream.ts";
 
 type BindValue = string | number | null;
 
@@ -65,6 +66,17 @@ const createDb = () => {
 };
 
 const env = () => ({ DB: createDb() });
+const createStreamNamespace = (db: D1Database) => {
+  const room = new DeviceStreamRoom({} as DurableObjectState, { DB: db });
+  return {
+    idFromName: (name: string) => ({ toString: () => name }),
+    get: () => room as unknown as DurableObjectStub,
+  } as unknown as DurableObjectNamespace;
+};
+const envWithStream = (db: D1Database) => ({
+  DB: db,
+  STREAM: createStreamNamespace(db),
+});
 
 const login = async (db: D1Database, email = "admin@velozz.com", password = "XDman100#") => {
   const response = await app.request(
@@ -311,6 +323,54 @@ test("app endpoint creates commands and exposes microbit messages", async () => 
   const stateJson = await state.json();
   assert.equal(stateJson.item.latestEvent.name, "hello");
   assert.equal(stateJson.item.latestEvent.value, "world");
+});
+
+test("app stream emits snapshot and live updates", async () => {
+  const db = createDb();
+  const streamEnv = envWithStream(db);
+  const auth = await login(db);
+  const { sessionToken } = await auth.json();
+  const created = await app.request(
+    "http://local/v1/admin/api-keys",
+    {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${sessionToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({}),
+    },
+    streamEnv,
+  );
+  const { item } = await created.json();
+
+  const response = await app.request(
+    `http://local/v1/app/devices/${item.apiKey}/stream?deviceId=${item.apiKey}`,
+    {},
+    streamEnv,
+  );
+  assert.equal(response.status, 200);
+  assert.equal(
+    response.headers.get("content-type"),
+    "text/event-stream; charset=utf-8",
+  );
+
+  const reader = response.body?.getReader();
+  assert.ok(reader);
+  const first = await reader.read();
+  assert.ok(first.value);
+  assert.match(new TextDecoder().decode(first.value), /event: snapshot/);
+
+  await app.request(
+    `http://local/v1/microbit/send?deviceId=${item.apiKey}&name=hello&value=world`,
+    {},
+    streamEnv,
+  );
+
+  const second = await reader.read();
+  assert.ok(second.value);
+  assert.match(new TextDecoder().decode(second.value), /event: update/);
+  await reader.cancel();
 });
 
 test("send stores an event and updates latest state, heartbeat updates last seen without creating events", async () => {

@@ -16,6 +16,7 @@ export type UsageKind = "pull" | "send" | "ack" | "heartbeat";
 export type AppEnv = {
   Bindings: {
     DB: D1Database;
+    STREAM?: DurableObjectNamespace;
   };
   Variables: {
     session: SessionUser;

@@ -134,7 +134,7 @@
     <main>
       <div class="card">
         <h1>microbit app</h1>
-        <p class="lead">Two buttons, one display, and a microbit deviceId.</p>
+        <p class="lead">Two buttons, one display, and a live microbit stream.</p>
 
         <div class="grid">
           <div class="controls">
@@ -175,14 +175,21 @@
       backendUrlInput.value = localStorage.getItem("backendUrl") ?? defaults.backendUrl;
       deviceIdInput.value = defaults.deviceId;
 
+      let eventSource = null;
+      let view = {
+        state: null,
+        latestEvent: null,
+        recentEvents: [],
+      };
+
       const saveInputs = () => {
         localStorage.setItem("backendUrl", backendUrlInput.value.trim());
         localStorage.setItem("deviceId", deviceIdInput.value.trim());
       };
 
-      const render = (message, data) => {
+      const render = (message) => {
         statusEl.textContent = message;
-        displayEl.textContent = JSON.stringify(data, null, 2);
+        displayEl.textContent = JSON.stringify(view, null, 2);
       };
 
       const deviceUrl = () => {
@@ -194,10 +201,54 @@
         return { backendUrl, deviceId };
       };
 
-      const loadState = async () => {
+      const closeStream = () => {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+      };
+
+      const openStream = () => {
+        const target = deviceUrl();
+        closeStream();
+        if (!target) {
+          render("Waiting for a backend URL and deviceId.");
+          return;
+        }
+
+        const url = `${target.backendUrl}/v1/app/devices/${encodeURIComponent(target.deviceId)}/stream?deviceId=${encodeURIComponent(target.deviceId)}`;
+        eventSource = new EventSource(url);
+
+        eventSource.addEventListener("open", () => {
+          render("Live stream connected.");
+        });
+
+        eventSource.addEventListener("snapshot", (event) => {
+          view = JSON.parse(event.data);
+          render("Live stream connected.");
+        });
+
+        eventSource.addEventListener("update", (event) => {
+          const payload = JSON.parse(event.data);
+          if (payload.state) {
+            view.state = payload.state;
+          }
+          if (payload.item) {
+            view.latestEvent = payload.item;
+            view.recentEvents = [payload.item, ...view.recentEvents].slice(0, 10);
+          }
+          render("Live update received.");
+        });
+
+        eventSource.addEventListener("error", () => {
+          statusEl.textContent = "Stream reconnecting.";
+        });
+      };
+
+      const refresh = async () => {
         const target = deviceUrl();
         if (!target) {
-          render("Waiting for a backend URL and deviceId.", { ok: false });
+          render("Waiting for a backend URL and deviceId.");
           return;
         }
 
@@ -208,22 +259,22 @@
           if (!res.ok || !json.ok) {
             throw new Error(json.error ?? `HTTP ${res.status}`);
           }
-          const state = json.item.state ?? null;
-          const event = json.item.latestEvent ?? null;
-          render("Connected. Polling microbit data.", {
-            state,
-            latestEvent: event,
+          view = {
+            state: json.item.state ?? null,
+            latestEvent: json.item.latestEvent ?? null,
             recentEvents: json.item.recentEvents ?? [],
-          });
+          };
+          render("Waiting for live updates.");
+          openStream();
         } catch (error) {
-          render(`Load failed: ${error.message}`, { ok: false });
+          render(`Load failed: ${error.message}`);
         }
       };
 
       const sendCommand = async (name) => {
         const target = deviceUrl();
         if (!target) {
-          render("Waiting for a backend URL and deviceId.", { ok: false });
+          render("Waiting for a backend URL and deviceId.");
           return;
         }
 
@@ -243,9 +294,9 @@
           if (!res.ok || !json.ok) {
             throw new Error(json.error ?? `HTTP ${res.status}`);
           }
-          await loadState();
+          render(`Command sent: ${name}`);
         } catch (error) {
-          render(`Command failed: ${error.message}`, { ok: false });
+          render(`Command failed: ${error.message}`);
         } finally {
           buttonA.disabled = false;
           buttonB.disabled = false;
@@ -254,11 +305,10 @@
 
       buttonA.addEventListener("click", () => sendCommand("button_a"));
       buttonB.addEventListener("click", () => sendCommand("button_b"));
-      deviceIdInput.addEventListener("change", loadState);
-      backendUrlInput.addEventListener("change", loadState);
+      deviceIdInput.addEventListener("change", refresh);
+      backendUrlInput.addEventListener("change", refresh);
 
-      loadState();
-      setInterval(loadState, 2500);
+      refresh();
     </script>
   </body>
 </html>

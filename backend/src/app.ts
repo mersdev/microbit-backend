@@ -1,4 +1,9 @@
-import { createCommand, findApiKey, findDeviceState, listEventsForApiKey } from "./db.ts";
+import {
+  createCommand,
+  findApiKey,
+  findDeviceState,
+  listEventsForApiKey,
+} from "./db.ts";
 import { nowIso } from "./quota.ts";
 import type { AppEnv, DeviceCommandRow } from "./types.ts";
 
@@ -54,6 +59,18 @@ export const getDeviceHandler = async (c: import("hono").Context<AppEnv>) => {
       recentEvents: events.slice(0, 10),
     },
   });
+};
+
+export const getDeviceStreamHandler = async (c: import("hono").Context<AppEnv>) => {
+  const deviceId = c.req.param("deviceId");
+  if (!c.env.STREAM) {
+    return c.text("STREAM_UNAVAILABLE", 503);
+  }
+  const stub = c.env.STREAM.get(c.env.STREAM.idFromName(deviceId));
+  return stub.fetch(
+    `https://stream/v1/app/devices/${encodeURIComponent(deviceId)}/stream?deviceId=${encodeURIComponent(deviceId)}`,
+    { headers: { accept: "text/event-stream" } },
+  );
 };
 
 export const createDeviceCommandHandler = async (c: import("hono").Context<AppEnv>) => {

@@ -23,9 +23,11 @@ import {
 import {
   createDeviceCommandHandler,
   getDeviceHandler,
+  getDeviceStreamHandler,
 } from "./app.ts";
 import { bearerAuth, loginHandler, logoutHandler, meHandler, requireRole } from "./auth.ts";
 import { ackHandler, heartbeatHandler, pullHandler, sendHandler } from "./microbit.ts";
+export { DeviceStreamRoom } from "./stream.ts";
 import type { AppEnv } from "./types.ts";
 import { cors } from "hono/cors";
 
@@ -52,6 +54,7 @@ app.get("/v1/microbit/ack", ackHandler);
 app.get("/v1/microbit/heartbeat", heartbeatHandler);
 
 app.get("/v1/app/devices/:deviceId", getDeviceHandler);
+app.get("/v1/app/devices/:deviceId/stream", getDeviceStreamHandler);
 app.post("/v1/app/devices/:deviceId/command", createDeviceCommandHandler);
 
 app.use("/v1/admin/*", bearerAuth);

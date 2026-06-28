@@ -35,6 +35,7 @@ The Pages app uses these public backend routes:
 
 ```txt
 GET /v1/app/devices/{deviceId}
+GET /v1/app/devices/{deviceId}/stream
 POST /v1/app/devices/{deviceId}/command
 ```
 

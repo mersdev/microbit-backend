@@ -16,6 +16,7 @@ import {
   type AppEnv,
   type ApiKeyRow,
 } from "./types.ts";
+import { broadcastDeviceUpdate } from "./stream.ts";
 
 const text = (body: string) =>
   new Response(body, {
@@ -93,6 +94,22 @@ export const sendHandler = async (c: import("hono").Context<AppEnv>) => {
     createdAt: now,
   });
   await upsertDeviceState(c.env.DB, apiKey.apiKey, name, value, now, now);
+  await broadcastDeviceUpdate(c.env, apiKey.apiKey, {
+    kind: "event",
+    item: {
+      apiKey: apiKey.apiKey,
+      name,
+      value,
+      createdAt: now,
+    },
+    state: {
+      apiKey: apiKey.apiKey,
+      lastEventName: name,
+      lastEventValue: value,
+      lastSeenAt: now,
+      updatedAt: now,
+    },
+  });
   return formatOk(quota.left);
 };
 
@@ -144,5 +161,15 @@ export const heartbeatHandler = async (c: import("hono").Context<AppEnv>) => {
     now,
     now,
   );
+  await broadcastDeviceUpdate(c.env, apiKey.apiKey, {
+    kind: "heartbeat",
+    state: {
+      apiKey: apiKey.apiKey,
+      lastEventName: state?.lastEventName ?? null,
+      lastEventValue: state?.lastEventValue ?? null,
+      lastSeenAt: now,
+      updatedAt: now,
+    },
+  });
   return formatOk(quota.left);
 };
