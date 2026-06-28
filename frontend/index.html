@@ -154,6 +154,7 @@
           </div>
 
           <div class="status" id="status">Waiting for a deviceId.</div>
+          <div class="status" id="streamStatus">Stream disconnected.</div>
           <pre id="display">No data yet.</pre>
         </div>
       </div>
@@ -163,6 +164,7 @@
       const backendUrlInput = document.getElementById("backendUrl");
       const deviceIdInput = document.getElementById("deviceId");
       const statusEl = document.getElementById("status");
+      const streamStatusEl = document.getElementById("streamStatus");
       const displayEl = document.getElementById("display");
       const buttonA = document.getElementById("buttonA");
       const buttonB = document.getElementById("buttonB");
@@ -192,6 +194,10 @@
         displayEl.textContent = JSON.stringify(view, null, 2);
       };
 
+      const setStreamStatus = (message) => {
+        streamStatusEl.textContent = message;
+      };
+
       const deviceUrl = () => {
         const backendUrl = backendUrlInput.value.trim().replace(/\/$/, "");
         const deviceId = deviceIdInput.value.trim();
@@ -213,18 +219,22 @@
         closeStream();
         if (!target) {
           render("Waiting for a backend URL and deviceId.");
+          setStreamStatus("Stream disconnected.");
           return;
         }
 
         const url = `${target.backendUrl}/v1/app/devices/${encodeURIComponent(target.deviceId)}/stream?deviceId=${encodeURIComponent(target.deviceId)}`;
+        setStreamStatus(`Connecting to stream for ${target.deviceId}...`);
         eventSource = new EventSource(url);
 
         eventSource.addEventListener("open", () => {
+          setStreamStatus(`Live stream connected for ${target.deviceId}.`);
           render("Live stream connected.");
         });
 
         eventSource.addEventListener("snapshot", (event) => {
           view = JSON.parse(event.data);
+          setStreamStatus(`Live stream connected for ${target.deviceId}.`);
           render("Live stream connected.");
         });
 
@@ -237,10 +247,12 @@
             view.latestEvent = payload.item;
             view.recentEvents = [payload.item, ...view.recentEvents].slice(0, 10);
           }
+          setStreamStatus(`Live update received for ${target.deviceId}.`);
           render("Live update received.");
         });
 
         eventSource.addEventListener("error", () => {
+          setStreamStatus(`Stream reconnecting for ${target.deviceId}...`);
           statusEl.textContent = "Stream reconnecting.";
         });
       };
@@ -249,6 +261,7 @@
         const target = deviceUrl();
         if (!target) {
           render("Waiting for a backend URL and deviceId.");
+          setStreamStatus("Stream disconnected.");
           return;
         }
 
@@ -264,9 +277,11 @@
             latestEvent: json.item.latestEvent ?? null,
             recentEvents: json.item.recentEvents ?? [],
           };
+          setStreamStatus(`Snapshot loaded for ${target.deviceId}.`);
           render("Waiting for live updates.");
           openStream();
         } catch (error) {
+          setStreamStatus("Stream disconnected.");
           render(`Load failed: ${error.message}`);
         }
       };
@@ -275,6 +290,7 @@
         const target = deviceUrl();
         if (!target) {
           render("Waiting for a backend URL and deviceId.");
+          setStreamStatus("Stream disconnected.");
           return;
         }
 
@@ -295,6 +311,7 @@
             throw new Error(json.error ?? `HTTP ${res.status}`);
           }
           render(`Command sent: ${name}`);
+          setStreamStatus(`Command sent to ${target.deviceId}.`);
         } catch (error) {
           render(`Command failed: ${error.message}`);
         } finally {
