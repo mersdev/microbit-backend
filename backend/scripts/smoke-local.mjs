@@ -50,7 +50,10 @@ const run = (cmd, args) =>
   });
 
 const executeLocal = async (sql) => {
-  await run("./node_modules/.bin/wrangler", [
+  await run("npm", [
+    "exec",
+    "--",
+    "wrangler",
     "d1",
     "execute",
     "DB",
@@ -64,7 +67,7 @@ const executeLocal = async (sql) => {
 
 await run("npm", ["run", "db:reset:local"]);
 
-const server = spawn("./node_modules/.bin/wrangler", ["dev", "--persist-to", ".wrangler/state"], {
+const server = spawn("npm", ["exec", "--", "wrangler", "dev", "--persist-to", ".wrangler/state"], {
   stdio: "inherit",
   shell: false,
 });

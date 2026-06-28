@@ -22,18 +22,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: backend
-        run: npm ci
 
       - name: Ensure Pages project exists
         working-directory: frontend
         run: |
-          if ! npm --prefix ../backend exec -- wrangler pages project list --json | grep -q '"name": *"microbit-frontend"'; then
-            npm --prefix ../backend exec -- wrangler pages project create microbit-frontend --production-branch main
+          if ! npx wrangler@4 pages project list --json | grep -q '"name": *"microbit-frontend"'; then
+            npx wrangler@4 pages project create microbit-frontend --production-branch main
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -41,7 +35,7 @@ jobs:
 
       - name: Deploy Pages
         working-directory: frontend
-        run: npm --prefix ../backend exec -- wrangler pages deploy .
+        run: npx wrangler@4 pages deploy .
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
