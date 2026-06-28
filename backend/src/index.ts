@@ -20,11 +20,25 @@ import {
   usageHistoryHandler,
   usageTodayHandler,
 } from "./admin.ts";
+import {
+  createDeviceCommandHandler,
+  getDeviceHandler,
+} from "./app.ts";
 import { bearerAuth, loginHandler, logoutHandler, meHandler, requireRole } from "./auth.ts";
 import { ackHandler, heartbeatHandler, pullHandler, sendHandler } from "./microbit.ts";
 import type { AppEnv } from "./types.ts";
+import { cors } from "hono/cors";
 
 const app = new Hono<AppEnv>();
+
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 app.get("/v1/health", (c) => c.text("OK"));
 
@@ -36,6 +50,9 @@ app.get("/v1/microbit/pull", pullHandler);
 app.get("/v1/microbit/send", sendHandler);
 app.get("/v1/microbit/ack", ackHandler);
 app.get("/v1/microbit/heartbeat", heartbeatHandler);
+
+app.get("/v1/app/devices/:deviceId", getDeviceHandler);
+app.post("/v1/app/devices/:deviceId/command", createDeviceCommandHandler);
 
 app.use("/v1/admin/*", bearerAuth);
 app.use("/v1/super/*", bearerAuth, requireRole("super_admin"));

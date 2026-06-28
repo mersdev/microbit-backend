@@ -261,6 +261,58 @@ test("pull returns NONE then CMD and ack marks command acknowledged", async () =
   assert.equal(commandsJson.items[0].status, "acknowledged");
 });
 
+test("app endpoint creates commands and exposes microbit messages", async () => {
+  const db = createDb();
+  const auth = await login(db);
+  const { sessionToken } = await auth.json();
+  const created = await app.request(
+    "http://local/v1/admin/api-keys",
+    {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${sessionToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({}),
+    },
+    { DB: db },
+  );
+  const { item } = await created.json();
+
+  const command = await app.request(
+    `http://local/v1/app/devices/${item.apiKey}/command`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "button_a", value: "pressed" }),
+    },
+    { DB: db },
+  );
+  assert.equal(command.status, 201);
+
+  const pulled = await app.request(
+    `http://local/v1/microbit/pull?deviceId=${item.apiKey}`,
+    {},
+    { DB: db },
+  );
+  assert.match(await pulled.text(), /^CMD\|/);
+
+  await app.request(
+    `http://local/v1/microbit/send?deviceId=${item.apiKey}&name=hello&value=world`,
+    {},
+    { DB: db },
+  );
+
+  const state = await app.request(
+    `http://local/v1/app/devices/${item.apiKey}`,
+    {},
+    { DB: db },
+  );
+  const stateJson = await state.json();
+  assert.equal(stateJson.item.latestEvent.name, "hello");
+  assert.equal(stateJson.item.latestEvent.value, "world");
+});
+
 test("send stores an event and updates latest state, heartbeat updates last seen without creating events", async () => {
   const db = createDb();
   const auth = await login(db);

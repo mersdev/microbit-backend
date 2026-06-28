@@ -3,13 +3,8 @@
 @password = XDman100#
 # Run Login once; authToken is pulled from that response for the rest of this file.
 @authToken = {{login.response.body.$.sessionToken}}
-@seededApiKey = velozz_admin_seed
-@smokeApiKey = {{createSmokeKey.response.body.$.item.apiKey}}
-@limitApiKey = {{createLimitKey.response.body.$.item.apiKey}}
+@apiKey = {{createApiKey.response.body.$.item.apiKey}}
 @commandId = {{createCommand.response.body.$.item.id}}
-@unlimitedRequestId = {{requestUnlimitedApprove.response.body.$.item.id}}
-@unlimitedRequestId2 = {{requestUnlimitedReject.response.body.$.item.id}}
-@rotatedApiKey = {{rotateKey.response.body.$.newKey.apiKey}}
 
 ### Health
 GET {{baseUrl}}/v1/health
@@ -32,12 +27,8 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/v1/admin/api-keys
 Authorization: Bearer {{authToken}}
 
-### Seeded Admin Key
-GET {{baseUrl}}/v1/admin/api-keys/{{seededApiKey}}
-Authorization: Bearer {{authToken}}
-
-### Create Smoke Key
-# @name createSmokeKey
+### Create API Key
+# @name createApiKey
 POST {{baseUrl}}/v1/admin/api-keys
 Authorization: Bearer {{authToken}}
 content-type: application/json
@@ -46,30 +37,13 @@ content-type: application/json
   "label": "smoke-kit"
 }
 
-### Create Limit Key
-# @name createLimitKey
-POST {{baseUrl}}/v1/admin/api-keys
+### API Key Detail
+GET {{baseUrl}}/v1/admin/api-keys/{{apiKey}}
 Authorization: Bearer {{authToken}}
-content-type: application/json
-
-{
-  "label": "limit-kit"
-}
-
-### Smoke Key Detail
-GET {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}
-Authorization: Bearer {{authToken}}
-
-### Limit Key Detail
-GET {{baseUrl}}/v1/admin/api-keys/{{limitApiKey}}
-Authorization: Bearer {{authToken}}
-
-### Seeded Key Pull
-GET {{baseUrl}}/v1/microbit/pull?deviceId={{seededApiKey}}
 
 ### Create Command
 # @name createCommand
-POST {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/command
+POST {{baseUrl}}/v1/admin/api-keys/{{apiKey}}/command
 Authorization: Bearer {{authToken}}
 content-type: application/json
 
@@ -79,105 +53,20 @@ content-type: application/json
 }
 
 ### List Commands
-GET {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/commands
+GET {{baseUrl}}/v1/admin/api-keys/{{apiKey}}/commands
 Authorization: Bearer {{authToken}}
 
-### Pull Command
-GET {{baseUrl}}/v1/microbit/pull?deviceId={{smokeApiKey}}
+### Microbit Pull
+GET {{baseUrl}}/v1/microbit/pull?deviceId={{apiKey}}
 
-### Ack Command
-GET {{baseUrl}}/v1/microbit/ack?deviceId={{smokeApiKey}}&cmdId={{commandId}}
+### Microbit Ack
+GET {{baseUrl}}/v1/microbit/ack?deviceId={{apiKey}}&cmdId={{commandId}}
 
-### Send Event
-GET {{baseUrl}}/v1/microbit/send?deviceId={{smokeApiKey}}&name=light&value=88
+### Microbit Send
+GET {{baseUrl}}/v1/microbit/send?deviceId={{apiKey}}&name=light&value=88
 
-### Heartbeat
-GET {{baseUrl}}/v1/microbit/heartbeat?deviceId={{smokeApiKey}}
-
-### Events
-GET {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/events
-Authorization: Bearer {{authToken}}
-
-### State
-GET {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/state
-Authorization: Bearer {{authToken}}
-
-### Usage Today
-GET {{baseUrl}}/v1/admin/usage/today
-Authorization: Bearer {{authToken}}
-
-### API Key Usage
-GET {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/usage
-Authorization: Bearer {{authToken}}
-
-### Usage History
-GET {{baseUrl}}/v1/admin/usage/history?days=7
-Authorization: Bearer {{authToken}}
-
-### Request Unlimited Approve
-# @name requestUnlimitedApprove
-POST {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/unlimited/request
-Authorization: Bearer {{authToken}}
-content-type: application/json
-
-{
-  "requestedUntil": "2026-06-30T12:00:00.000Z",
-  "reason": "smoke approve"
-}
-
-### List Unlimited Requests
-GET {{baseUrl}}/v1/admin/unlimited-requests
-Authorization: Bearer {{authToken}}
-
-### Approve Unlimited
-POST {{baseUrl}}/v1/super/unlimited-requests/{{unlimitedRequestId}}/approve
-Authorization: Bearer {{authToken}}
-
-### Request Unlimited Reject
-# @name requestUnlimitedReject
-POST {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/unlimited/request
-Authorization: Bearer {{authToken}}
-content-type: application/json
-
-{
-  "requestedUntil": "2026-06-30T12:00:00.000Z",
-  "reason": "smoke reject"
-}
-
-### Reject Unlimited
-POST {{baseUrl}}/v1/super/unlimited-requests/{{unlimitedRequestId2}}/reject
-Authorization: Bearer {{authToken}}
-
-### Cancel Unlimited
-POST {{baseUrl}}/v1/super/api-keys/{{smokeApiKey}}/unlimited/cancel
-Authorization: Bearer {{authToken}}
-
-### Disable API Key
-POST {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/disable
-Authorization: Bearer {{authToken}}
-
-### Enable API Key
-POST {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/enable
-Authorization: Bearer {{authToken}}
-
-### Rotate API Key
-# @name rotateKey
-POST {{baseUrl}}/v1/admin/api-keys/{{smokeApiKey}}/rotate
-Authorization: Bearer {{authToken}}
-
-### Old Key Invalid
-GET {{baseUrl}}/v1/microbit/pull?deviceId={{smokeApiKey}}
-
-### Rotated Key Pull
-GET {{baseUrl}}/v1/microbit/pull?deviceId={{rotatedApiKey}}
-
-### Quota Limit
-# The smoke script seeds {{limitApiKey}} to 1000 requests before this request.
-GET {{baseUrl}}/v1/microbit/pull?deviceId={{limitApiKey}}
-
-### Audit Logs
-GET {{baseUrl}}/v1/admin/audit-logs
-Authorization: Bearer {{authToken}}
+### Microbit Heartbeat
+GET {{baseUrl}}/v1/microbit/heartbeat?deviceId={{apiKey}}
 
 ### Logout
 POST {{baseUrl}}/v1/auth/logout

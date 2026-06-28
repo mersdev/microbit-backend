@@ -29,6 +29,15 @@ CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
 ```
 
+The microbit demo frontend lives in `frontend/index.html` and is deployed to Cloudflare Pages from `.github/workflows/deploy-pages.yml`.
+
+The Pages app uses these public backend routes:
+
+```txt
+GET /v1/app/devices/{deviceId}
+POST /v1/app/devices/{deviceId}/command
+```
+
 You can smoke-test the full API from repo root with [local.http](/Users/baoren/playground/microbit-backend/local.http) or [dev.http](/Users/baoren/playground/microbit-backend/dev.http). Use `local.http` against `wrangler dev` and `dev.http` against the deployed Worker URL, then paste the returned `sessionToken`, `apiKey`, `cmdId`, and `requestId` back into the variables at the top of the file.
 
 The login request in each file is named `login`, and the bearer token is read from `{{login.response.body.$.sessionToken}}` so you do not have to copy the token by hand. Run the login request once first in REST Client, then the later requests reuse the captured token.
