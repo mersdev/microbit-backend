@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "backend",
+	"name": "microbit-backend",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-28",
 	"assets": {
@@ -17,6 +17,14 @@
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "microbit-backend-db",
+			"database_id": "3cbe01de-a620-4c62-8e2b-ba91141689a7",
+			"migrations_dir": "migrations"
+		}
 	]
 	/**
 	 * Smart Placement

@@ -2,9 +2,14 @@
   "name": "backend",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "npm run db:migrate:local && wrangler dev --persist-to .wrangler/state",
     "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "db:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler/state",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "db:reset:local": "rm -rf .wrangler/state && npm run db:migrate:local",
+    "smoke:local": "node ./scripts/smoke-local.mjs",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "test": "node --test --experimental-strip-types ./test/*.test.ts"
   },
   "dependencies": {
     "hono": "^4.12.27"
