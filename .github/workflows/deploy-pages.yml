@@ -14,10 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    defaults:
-      run:
-        working-directory: backend
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,10 +26,22 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
+        working-directory: backend
         run: npm ci
 
+      - name: Ensure Pages project exists
+        working-directory: frontend
+        run: |
+          if ! npm --prefix ../backend exec -- wrangler pages project list --json | grep -q '"name": *"microbit-frontend"'; then
+            npm --prefix ../backend exec -- wrangler pages project create microbit-frontend --production-branch main
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Deploy Pages
-        run: npx wrangler pages deploy ../frontend --project-name microbit-frontend
+        working-directory: frontend
+        run: npm --prefix ../backend exec -- wrangler pages deploy .
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
