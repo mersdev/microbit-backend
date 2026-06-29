@@ -160,7 +160,7 @@ INSERT INTO api_keys (
   created_at,
   updated_at
 ) VALUES (
-  'velozz_admin_seed',
+  'velozzadminseed',
   'center_default',
   'Seeded Admin Key',
   'active',

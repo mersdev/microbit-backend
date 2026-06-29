@@ -87,12 +87,14 @@ const apiKeyResponse = async (db: D1Database, apiKey: string) => {
 const scopedApiKeys = async (db: D1Database, user: SessionUser) =>
   listApiKeys(db, user.role === "super_admin" ? null : user.centerId);
 
+const randomLetters = (length: number) => {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return [...bytes].map((byte) => alphabet[byte % alphabet.length]).join("");
+};
+
 const makeApiKey = () => {
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  const suffix = [...bytes]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-  return `velozz_${suffix}`;
+  return `velozz${randomLetters(12)}`;
 };
 
 export const listApiKeysHandler = async (c: import("hono").Context<AppEnv>) => {

@@ -112,7 +112,7 @@ test("seeded super admin can log in and wrong password fails", async () => {
   const seededJson = await seeded.json();
   assert.ok(
     seededJson.items.some(
-      (item: { apiKey: string }) => item.apiKey === "velozz_admin_seed",
+      (item: { apiKey: string }) => item.apiKey === "velozzadminseed",
     ),
   );
 
@@ -152,7 +152,7 @@ test("api key creation returns full visible key", async () => {
 
   const json = await response.json();
   assert.equal(response.status, 201);
-  assert.match(json.item.apiKey, /^velozz_/);
+  assert.match(json.item.apiKey, /^velozz[a-z]+$/);
 });
 
 test("disabled key returns INVALID_KEY and rotate disables old key while new key works", async () => {
@@ -511,7 +511,18 @@ test("center-scoped authorization blocks another center key", async () => {
     .prepare(
       "INSERT INTO api_keys (api_key, center_id, label, status, daily_limit, unlimited_until, last_used_at, rotated_to_api_key, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind("velozz_other", "center_other", null, "active", 1000, null, null, null, new Date().toISOString(), new Date().toISOString())
+    .bind(
+      "velozzother",
+      "center_other",
+      null,
+      "active",
+      1000,
+      null,
+      null,
+      null,
+      new Date().toISOString(),
+      new Date().toISOString(),
+    )
     .run();
   await sqlite
     .prepare(
@@ -523,7 +534,7 @@ test("center-scoped authorization blocks another center key", async () => {
   const teacherLogin = await login(db, "teacher@velozz.com", "Teacher100#");
   const { sessionToken } = await teacherLogin.json();
   const response = await app.request(
-    "http://local/v1/admin/api-keys/velozz_other",
+    "http://local/v1/admin/api-keys/velozzother",
     { headers: { authorization: `Bearer ${sessionToken}` } },
     { DB: db },
   );

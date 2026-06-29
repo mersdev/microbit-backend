@@ -3,7 +3,7 @@ import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 
 const baseUrl = "http://127.0.0.1:8787";
-const seededKey = "velozz_admin_seed";
+const seededKey = "velozzadminseed";
 
 const readText = async (res) => res.text();
 
@@ -125,7 +125,7 @@ try {
   });
   const smokeCreateText = await assertOk(smokeCreateRes, "create api key");
   const smokeApiKey = JSON.parse(smokeCreateText).item.apiKey;
-  if (!/^velozz_/.test(smokeApiKey)) {
+  if (!/^velozz[a-z]+$/.test(smokeApiKey)) {
     throw new Error(`unexpected api key: ${smokeApiKey}`);
   }
 
@@ -306,7 +306,7 @@ try {
   });
   const rotateText = await assertOk(rotateRes, "rotate key");
   const rotatedApiKey = JSON.parse(rotateText).newKey.apiKey;
-  if (!/^velozz_/.test(rotatedApiKey)) {
+  if (!/^velozz[a-z]+$/.test(rotatedApiKey)) {
     throw new Error(`unexpected rotated api key: ${rotatedApiKey}`);
   }
 
