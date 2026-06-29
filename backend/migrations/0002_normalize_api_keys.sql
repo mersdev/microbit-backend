@@ -1,4 +1,4 @@
-PRAGMA foreign_keys = OFF;
+PRAGMA defer_foreign_keys = on;
 
 CREATE TEMP TABLE api_key_renames (
   old_key TEXT PRIMARY KEY,
@@ -128,4 +128,4 @@ WHERE EXISTS (
 
 DROP TABLE api_key_renames;
 
-PRAGMA foreign_keys = ON;
+PRAGMA defer_foreign_keys = off;
