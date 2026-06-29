@@ -21,6 +21,7 @@ The backend is a Hono Worker with D1 as the only persistence layer. It serves:
 - microbit transport: `/v1/microbit/pull`, `/v1/microbit/send`, `/v1/microbit/ack`, `/v1/microbit/heartbeat`
 - app-facing routes: `/v1/app/devices/:deviceId`, `/v1/app/devices/:deviceId/stream`, `/v1/app/devices/:deviceId/command`
 - admin routes under `/v1/admin/*`
+- Swagger UI: `https://microbit-backend.velozz.workers.dev/v1/docs`
 
 Local commands:
 

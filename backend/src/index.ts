@@ -27,6 +27,8 @@ import {
 } from "./app.ts";
 import { bearerAuth, loginHandler, logoutHandler, meHandler, requireRole } from "./auth.ts";
 import { ackHandler, heartbeatHandler, pullHandler, sendHandler } from "./microbit.ts";
+import { openApiDoc } from "./openapi.ts";
+import { swaggerUI } from "@hono/swagger-ui";
 export { DeviceStreamRoom } from "./stream.ts";
 import type { AppEnv } from "./types.ts";
 import { cors } from "hono/cors";
@@ -43,6 +45,8 @@ app.use(
 );
 
 app.get("/v1/health", (c) => c.text("OK"));
+app.get("/v1/openapi.json", (c) => c.json(openApiDoc));
+app.get("/v1/docs", swaggerUI({ url: "/v1/openapi.json" }));
 
 app.post("/v1/auth/login", loginHandler);
 app.post("/v1/auth/logout", bearerAuth, logoutHandler);

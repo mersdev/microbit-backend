@@ -101,6 +101,19 @@ test("health endpoint returns OK", async () => {
   assert.equal(await response.text(), "OK");
 });
 
+test("swagger ui and openapi json are served", async () => {
+  const docs = await app.request("http://local/v1/docs", {}, env());
+  assert.equal(docs.status, 200);
+  assert.match(docs.headers.get("content-type") ?? "", /^text\/html/);
+
+  const spec = await app.request("http://local/v1/openapi.json", {}, env());
+  assert.equal(spec.status, 200);
+  assert.match(spec.headers.get("content-type") ?? "", /^application\/json/);
+  const specJson = await spec.json();
+  assert.equal(specJson.openapi, "3.0.0");
+  assert.ok(specJson.paths["/v1/microbit/pull"]);
+});
+
 test("seeded super admin can log in and wrong password fails", async () => {
   const db = createDb();
   const ok = await login(db);
