@@ -82,7 +82,7 @@ export class DeviceStreamRoom {
               deviceId,
               state,
               latestEvent: events[0] ?? null,
-              recentEvents: events.slice(0, 10),
+              recentEvents: events.slice(0, 5),
             }),
           );
         },

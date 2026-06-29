@@ -130,7 +130,7 @@ test("seeded super admin can log in and wrong password fails", async () => {
   const seededJson = await seeded.json();
   assert.ok(
     seededJson.items.some(
-      (item: { apiKey: string }) => item.apiKey === "velozzadminseed",
+      (item: { apiKey: string }) => item.apiKey === "velozzqtminsuut",
     ),
   );
 

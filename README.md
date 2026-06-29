@@ -102,7 +102,7 @@ npm run smoke:local
 
 - Seeded admin login: `admin@velozz.com`
 - Seeded admin password: `XDman100#`
-- Seeded API key: `velozzadminseed`
+- Seeded API key: `velozzqtminsuut`
 - Generated API keys are letters-only, start with `velozz`, and contain no symbols or digits.
 - Frontend API key/device identity is the query param `deviceId`
 - The frontend is meant to live on Cloudflare Pages, not inside the Worker bundle

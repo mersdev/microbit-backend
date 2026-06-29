@@ -168,13 +168,16 @@
       const displayEl = document.getElementById("display");
       const buttonA = document.getElementById("buttonA");
       const buttonB = document.getElementById("buttonB");
+      const maxRecentRecords = 5;
 
+      const backendUrlDefault = "https://microbit-backend.velozz.workers.dev";
+      const seededDeviceId = "velozzqtminsuut";
       const defaults = {
-        backendUrl: "https://microbit-backend.velozz.workers.dev",
-        deviceId: localStorage.getItem("deviceId") ?? "",
+        backendUrl: localStorage.getItem("backendUrl") ?? backendUrlDefault,
+        deviceId: localStorage.getItem("deviceId") ?? seededDeviceId,
       };
 
-      backendUrlInput.value = localStorage.getItem("backendUrl") ?? defaults.backendUrl;
+      backendUrlInput.value = defaults.backendUrl;
       deviceIdInput.value = defaults.deviceId;
 
       let eventSource = null;
@@ -245,7 +248,7 @@
           }
           if (payload.item) {
             view.latestEvent = payload.item;
-            view.recentEvents = [payload.item, ...view.recentEvents].slice(0, 10);
+            view.recentEvents = [payload.item, ...view.recentEvents].slice(0, maxRecentRecords);
           }
           setStreamStatus(`Live update received for ${target.deviceId}.`);
           render("Live update received.");
@@ -286,7 +289,7 @@
         }
       };
 
-      const sendCommand = async (name) => {
+      const sendCommand = async (value) => {
         const target = deviceUrl();
         if (!target) {
           render("Waiting for a backend URL and deviceId.");
@@ -303,14 +306,14 @@
             {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ name, value: "pressed" }),
+              body: JSON.stringify({ name: "show", value }),
             },
           );
           const json = await res.json();
           if (!res.ok || !json.ok) {
             throw new Error(json.error ?? `HTTP ${res.status}`);
           }
-          render(`Command sent: ${name}`);
+          render(`Command sent: show ${value}`);
           setStreamStatus(`Command sent to ${target.deviceId}.`);
         } catch (error) {
           render(`Command failed: ${error.message}`);
@@ -320,8 +323,8 @@
         }
       };
 
-      buttonA.addEventListener("click", () => sendCommand("button_a"));
-      buttonB.addEventListener("click", () => sendCommand("button_b"));
+      buttonA.addEventListener("click", () => sendCommand("A"));
+      buttonB.addEventListener("click", () => sendCommand("B"));
       deviceIdInput.addEventListener("change", refresh);
       backendUrlInput.addEventListener("change", refresh);
 

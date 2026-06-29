@@ -17,7 +17,7 @@ INSERT INTO api_keys (
   created_at,
   updated_at
 ) VALUES (
-  'velozzadminseed',
+  'velozzqtminsuut',
   'center_default',
   'Seeded Admin Key',
   'active',

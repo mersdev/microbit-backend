@@ -477,7 +477,7 @@ export const listCommandsForApiKey = async (db: D1Database, apiKey: string) =>
   allRows(
     db
       .prepare(
-        "SELECT * FROM device_commands WHERE api_key = ? ORDER BY created_at DESC",
+        "SELECT * FROM device_commands WHERE api_key = ? ORDER BY created_at DESC LIMIT 5",
       )
       .bind(apiKey),
     toCommand,
@@ -496,7 +496,7 @@ export const listEventsForApiKey = async (db: D1Database, apiKey: string) =>
   allRows(
     db
       .prepare(
-        "SELECT * FROM device_events WHERE api_key = ? ORDER BY created_at DESC",
+        "SELECT * FROM device_events WHERE api_key = ? ORDER BY created_at DESC LIMIT 5",
       )
       .bind(apiKey),
     toEvent,

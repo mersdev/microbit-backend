@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 
 const baseUrl = "http://127.0.0.1:8787";
-const seededKey = "velozzadminseed";
+const seededKey = "velozzqtminsuut";
 const klDate = (value = new Date()) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kuala_Lumpur",
