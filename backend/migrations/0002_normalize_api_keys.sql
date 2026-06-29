@@ -1,7 +1,5 @@
 PRAGMA foreign_keys = OFF;
 
-BEGIN TRANSACTION;
-
 CREATE TEMP TABLE api_key_renames (
   old_key TEXT PRIMARY KEY,
   new_key TEXT NOT NULL UNIQUE
@@ -129,7 +127,5 @@ WHERE EXISTS (
 );
 
 DROP TABLE api_key_renames;
-
-COMMIT;
 
 PRAGMA foreign_keys = ON;
