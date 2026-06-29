@@ -2,6 +2,8 @@
 @email = admin@velozz.com
 @password = XDman100#
 # Run Login once; authToken is pulled from that response for the rest of this file.
+# API keys are letters-only and start with `velozz`.
+# Seeded API key: `velozzadminseed`.
 @authToken = {{login.response.body.$.sessionToken}}
 @apiKey = {{createApiKey.response.body.$.item.apiKey}}
 @commandId = {{createCommand.response.body.$.item.id}}
