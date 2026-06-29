@@ -1,9 +1,17 @@
 import { spawn } from "node:child_process";
+import assert from "node:assert/strict";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 
 const baseUrl = "http://127.0.0.1:8787";
 const seededKey = "velozzadminseed";
+const klDate = (value = new Date()) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kuala_Lumpur",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
 
 const readText = async (res) => res.text();
 
@@ -21,6 +29,14 @@ const assertText = async (res, label, pattern) => {
     throw new Error(`${label} unexpected response: ${text}`);
   }
   return text;
+};
+
+const assertJson = async (res, label, expected) => {
+  const text = await readText(res);
+  const json = JSON.parse(text);
+  assert.equal(res.headers.get("content-type"), "application/json; charset=utf-8");
+  assert.deepEqual(json, expected, `${label} unexpected response: ${text}`);
+  return json;
 };
 
 const waitForHealth = async () => {
@@ -171,28 +187,36 @@ try {
     "list commands",
   );
 
-  await assertText(
+  await assertJson(
     await fetch(`${baseUrl}/v1/microbit/pull?deviceId=${smokeApiKey}`),
     "pull command",
-    new RegExp(`^CMD\\|cmdId=${commandId}\\|name=show\\|value=7\\|POLL=10000\\|LEFT=\\d+$`),
+    {
+      ok: true,
+      type: "cmd",
+      cmdId: commandId,
+      name: "show",
+      value: "7",
+      poll: 10000,
+      left: 999,
+    },
   );
 
-  await assertText(
+  await assertJson(
     await fetch(`${baseUrl}/v1/microbit/ack?deviceId=${smokeApiKey}&cmdId=${commandId}`),
     "ack command",
-    /^OK\|LEFT=\d+$/,
+    { ok: true, type: "ack", left: 998 },
   );
 
-  await assertText(
+  await assertJson(
     await fetch(`${baseUrl}/v1/microbit/send?deviceId=${smokeApiKey}&name=light&value=88`),
     "send event",
-    /^OK\|LEFT=\d+$/,
+    { ok: true, type: "send", left: 997 },
   );
 
-  await assertText(
+  await assertJson(
     await fetch(`${baseUrl}/v1/microbit/heartbeat?deviceId=${smokeApiKey}`),
     "heartbeat",
-    /^OK\|LEFT=\d+$/,
+    { ok: true, type: "heartbeat", left: 996 },
   );
 
   await assertOk(
@@ -310,20 +334,20 @@ try {
     throw new Error(`unexpected rotated api key: ${rotatedApiKey}`);
   }
 
-  await assertText(
+  await assertJson(
     await fetch(`${baseUrl}/v1/microbit/pull?deviceId=${smokeApiKey}`),
     "old key invalid",
-    /^INVALID_KEY$/,
+    { ok: false, error: "INVALID_KEY" },
   );
-  await assertText(
+  await assertJson(
     await fetch(`${baseUrl}/v1/microbit/pull?deviceId=${rotatedApiKey}`),
     "new key pull",
-    /^NONE\|POLL=10000\|LEFT=\d+$/,
+    { ok: true, type: "none", poll: 10000, left: 999 },
   );
 
   const limitUpdate = [
     "INSERT INTO api_key_usage_daily (api_key, usage_date, request_count, pull_count, send_count, ack_count, heartbeat_count, updated_at)",
-    `VALUES ('${limitApiKey}', '2026-06-28', 1000, 1000, 0, 0, 0, '2026-06-28T00:00:00.000Z')`,
+    `VALUES ('${limitApiKey}', '${klDate()}', 1000, 1000, 0, 0, 0, '${new Date().toISOString()}')`,
     "ON CONFLICT(api_key, usage_date) DO UPDATE SET",
     "request_count = excluded.request_count,",
     "pull_count = excluded.pull_count,",
@@ -334,10 +358,10 @@ try {
   ].join(" ");
   await executeLocal(limitUpdate);
 
-  await assertText(
+  await assertJson(
     await fetch(`${baseUrl}/v1/microbit/pull?deviceId=${limitApiKey}`),
     "quota limit",
-    /^LIMIT\|POLL=60000\|LEFT=0$/,
+    { ok: false, error: "LIMIT", type: "limit", poll: 60000, left: 0 },
   );
 
   await assertOk(

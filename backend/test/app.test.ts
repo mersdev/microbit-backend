@@ -91,6 +91,11 @@ const login = async (db: D1Database, email = "admin@velozz.com", password = "XDm
   return response;
 };
 
+const assertJsonResponse = async <T>(response: Response, expected: T) => {
+  assert.equal(response.headers.get("content-type"), "application/json; charset=utf-8");
+  assert.deepEqual(await response.json(), expected);
+};
+
 test("health endpoint returns OK", async () => {
   const response = await app.request("http://local/v1/health", {}, env());
   assert.equal(await response.text(), "OK");
@@ -183,7 +188,7 @@ test("disabled key returns INVALID_KEY and rotate disables old key while new key
     {},
     { DB: db },
   );
-  assert.equal(await disabled.text(), "INVALID_KEY");
+  await assertJsonResponse(disabled, { ok: false, error: "INVALID_KEY" });
 
   await app.request(
     `http://local/v1/admin/api-keys/${item.apiKey}/enable`,
@@ -206,8 +211,8 @@ test("disabled key returns INVALID_KEY and rotate disables old key while new key
     {},
     { DB: db },
   );
-  assert.equal(await oldResult.text(), "INVALID_KEY");
-  assert.match(await newResult.text(), /^NONE\|/);
+  await assertJsonResponse(oldResult, { ok: false, error: "INVALID_KEY" });
+  await assertJsonResponse(newResult, { ok: true, type: "none", poll: 10000, left: 999 });
 });
 
 test("pull returns NONE then CMD and ack marks command acknowledged", async () => {
@@ -233,7 +238,7 @@ test("pull returns NONE then CMD and ack marks command acknowledged", async () =
     {},
     { DB: db },
   );
-  assert.match(await none.text(), /^NONE\|POLL=10000\|LEFT=/);
+  await assertJsonResponse(none, { ok: true, type: "none", poll: 10000, left: 999 });
 
   const command = await app.request(
     `http://local/v1/admin/api-keys/${item.apiKey}/command`,
@@ -254,15 +259,22 @@ test("pull returns NONE then CMD and ack marks command acknowledged", async () =
     {},
     { DB: db },
   );
-  const pulledText = await pulled.text();
-  assert.match(pulledText, new RegExp(`^CMD\\|cmdId=${commandJson.item.id}\\|name=show\\|value=7\\|POLL=10000\\|LEFT=`));
+  await assertJsonResponse(pulled, {
+    ok: true,
+    type: "cmd",
+    cmdId: commandJson.item.id,
+    name: "show",
+    value: "7",
+    poll: 10000,
+    left: 998,
+  });
 
   const ack = await app.request(
     `http://local/v1/microbit/ack?deviceId=${item.apiKey}&cmdId=${commandJson.item.id}`,
     {},
     { DB: db },
   );
-  assert.match(await ack.text(), /^OK\|LEFT=/);
+  await assertJsonResponse(ack, { ok: true, type: "ack", left: 997 });
 
   const commands = await app.request(
     `http://local/v1/admin/api-keys/${item.apiKey}/commands`,
@@ -301,13 +313,22 @@ test("app endpoint creates commands and exposes microbit messages", async () => 
     { DB: db },
   );
   assert.equal(command.status, 201);
+  const commandJson = await command.json();
 
   const pulled = await app.request(
     `http://local/v1/microbit/pull?deviceId=${item.apiKey}`,
     {},
     { DB: db },
   );
-  assert.match(await pulled.text(), /^CMD\|/);
+  await assertJsonResponse(pulled, {
+    ok: true,
+    type: "cmd",
+    cmdId: commandJson.item.id,
+    name: "button_a",
+    value: "pressed",
+    poll: 10000,
+    left: 999,
+  });
 
   await app.request(
     `http://local/v1/microbit/send?deviceId=${item.apiKey}&name=hello&value=world`,
@@ -396,7 +417,7 @@ test("send stores an event and updates latest state, heartbeat updates last seen
     {},
     { DB: db },
   );
-  assert.match(await send.text(), /^OK\|LEFT=/);
+  await assertJsonResponse(send, { ok: true, type: "send", left: 999 });
 
   const events = await app.request(
     `http://local/v1/admin/api-keys/${item.apiKey}/events`,
@@ -415,11 +436,12 @@ test("send stores an event and updates latest state, heartbeat updates last seen
   const stateBeforeJson = await stateBefore.json();
   assert.equal(stateBeforeJson.item.lastEventValue, "88");
 
-  await app.request(
+  const heartbeat = await app.request(
     `http://local/v1/microbit/heartbeat?deviceId=${item.apiKey}`,
     {},
     { DB: db },
   );
+  await assertJsonResponse(heartbeat, { ok: true, type: "heartbeat", left: 998 });
   const eventsAfter = await app.request(
     `http://local/v1/admin/api-keys/${item.apiKey}/events`,
     { headers: { authorization: `Bearer ${sessionToken}` } },
@@ -466,7 +488,13 @@ test("quota stops at 1000 and unlimited approval allows requests past limit", as
     {},
     { DB: db },
   );
-  assert.match(await limited.text(), /^LIMIT\|/);
+  await assertJsonResponse(limited, {
+    ok: false,
+    error: "LIMIT",
+    type: "limit",
+    poll: 60000,
+    left: 0,
+  });
 
   const requestedUntil = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
   const request = await app.request(
@@ -493,7 +521,7 @@ test("quota stops at 1000 and unlimited approval allows requests past limit", as
     {},
     { DB: db },
   );
-  assert.match(await allowed.text(), /^OK\|LEFT=/);
+  await assertJsonResponse(allowed, { ok: true, type: "heartbeat", left: 0 });
 });
 
 test("center-scoped authorization blocks another center key", async () => {

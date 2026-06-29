@@ -66,15 +66,43 @@ GET {{baseUrl}}/v1/app/devices/{{apiKey}}/stream?deviceId={{apiKey}}
 Accept: text/event-stream
 
 ### Microbit Ack
+# Expected response:
+# {
+#   "ok": true,
+#   "type": "ack",
+#   "left": 998
+# }
 GET {{baseUrl}}/v1/microbit/ack?deviceId={{apiKey}}&cmdId={{commandId}}
 
 ### Microbit Pull
+# Expected response:
+# {
+#   "ok": true,
+#   "type": "cmd",
+#   "cmdId": "{{commandId}}",
+#   "name": "show",
+#   "value": "7",
+#   "poll": 10000,
+#   "left": 999
+# }
 GET {{baseUrl}}/v1/microbit/pull?deviceId={{apiKey}}
 
 ### Microbit Send
+# Expected response:
+# {
+#   "ok": true,
+#   "type": "send",
+#   "left": 997
+# }
 GET {{baseUrl}}/v1/microbit/send?deviceId={{apiKey}}&name=light&value=88
 
 ### Microbit Heartbeat
+# Expected response:
+# {
+#   "ok": true,
+#   "type": "heartbeat",
+#   "left": 996
+# }
 GET {{baseUrl}}/v1/microbit/heartbeat?deviceId={{apiKey}}
 
 ### Logout
